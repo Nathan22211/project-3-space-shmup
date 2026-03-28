@@ -37,6 +37,13 @@ public class Main : MonoBehaviour
     [Range(0.05f, 0.95f)] public float sideRunnerSpawnYMinFrac = 0.25f;
     [Range(0.05f, 0.95f)] public float sideRunnerSpawnYMaxFrac = 0.85f;
 
+    [Header("Heavy drop (#4 — larger, slow, no shots)")]
+    public GameObject heavyDropPrefab;
+    public float heavyDropWaveInterval = 9f;
+    public float heavyDropSpawnTopPadding = 6f;
+    [Tooltip("Random X as a fraction of camera half-width from center.")]
+    [Range(0.1f, 0.48f)] public float heavyDropSpawnXSpread = 0.36f;
+
     public float enemyDefaultPadding = 1.5f;
     public float gameRestartDelay = 2f;
 
@@ -54,6 +61,7 @@ public class Main : MonoBehaviour
         StartCoroutine(SideFormationWaves());
         StartCoroutine(SeekerWaves());
         StartCoroutine(SideRunnerWaves());
+        StartCoroutine(HeavyDropWaves());
     }
 
     IEnumerator SideRunnerWaves()
@@ -147,6 +155,35 @@ public class Main : MonoBehaviour
             }
             yield return new WaitForSeconds(seekerWaveInterval);
         }
+    }
+
+    IEnumerator HeavyDropWaves()
+    {
+        yield return new WaitForSeconds(4f);
+        while (true) {
+            if (heavyDropPrefab != null) {
+                SpawnHeavyDrop();
+            }
+            yield return new WaitForSeconds(heavyDropWaveInterval);
+        }
+    }
+
+    void SpawnHeavyDrop()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return;
+        }
+        float cx = cam.transform.position.x;
+        float cy = cam.transform.position.y;
+        float ch = cam.orthographicSize;
+        float halfW = (bndCheck != null && bndCheck.camWidth > 1e-4f)
+            ? bndCheck.camWidth
+            : ch * cam.aspect;
+        float y = cy + ch + heavyDropSpawnTopPadding;
+        float x = cx + Random.Range(-halfW * heavyDropSpawnXSpread, halfW * heavyDropSpawnXSpread);
+        GameObject go = Instantiate(heavyDropPrefab);
+        go.transform.position = new Vector3(x, y, 0f);
     }
 
     void SpawnSeeker()

@@ -11,6 +11,8 @@ public class Enemy : MonoBehaviour
     public float fireRate = 0.3f;
     public float health = 10;
     public int score = 100;
+    [Tooltip("How many hero shots (ProjecctileHero) remove this ship. Default 1 = one-shot like classic enemies.")]
+    [Min(1)] public int heroHitsToDestroy = 1;
 
     [Header("Weapon")]
     public GameObject projectilePrefab;
@@ -29,10 +31,12 @@ public class Enemy : MonoBehaviour
     private bool formationMove;
     protected float nextFireTime;
     protected bool wasOnScreen;
+    int _heroHitsRemaining;
 
     protected virtual void Awake()
     {
         bndCheck = GetComponent<BoundsCheck>();
+        _heroHitsRemaining = Mathf.Max(1, heroHitsToDestroy);
         if (s_enemyLayerMask < 0) {
             int l = LayerMask.NameToLayer("Enemy");
             s_enemyLayerMask = l >= 0 ? (1 << l) : 0;
@@ -188,7 +192,10 @@ public class Enemy : MonoBehaviour
         GameObject otherGO = coll.gameObject;
         if (otherGO.GetComponent<ProjecctileHero>() != null) {
             Destroy(otherGO);
-            Destroy(gameObject);
+            _heroHitsRemaining--;
+            if (_heroHitsRemaining <= 0) {
+                Destroy(gameObject);
+            }
             return;
         }
         Enemy otherEnemy = otherGO.GetComponentInParent<Enemy>();

@@ -439,6 +439,10 @@ MonoBehaviour:
   sideRunnerSpawnPadding: 3
   sideRunnerSpawnYMinFrac: 0.25
   sideRunnerSpawnYMaxFrac: 0.85
+  heavyDropPrefab: {fileID: 1272244872553479225, guid: c8d9e0f1a2b364758493021dcbefa012, type: 3}
+  heavyDropWaveInterval: 9
+  heavyDropSpawnTopPadding: 6
+  heavyDropSpawnXSpread: 0.36
   enemyDefaultPadding: 1.5
   gameRestartDelay: 2
 --- !u!1001 &1539514444
