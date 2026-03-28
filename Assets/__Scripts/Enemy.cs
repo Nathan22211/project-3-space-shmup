@@ -14,6 +14,10 @@ public class Enemy : MonoBehaviour
     [Tooltip("How many hero shots (ProjecctileHero) remove this ship. Default 1 = one-shot like classic enemies.")]
     [Min(1)] public int heroHitsToDestroy = 1;
 
+    [Header("Ram vs hero")]
+    [Tooltip("Shield layers removed when this ship hits the hero (trigger). Normal enemies use 1.")]
+    [Min(1)] public int heroRamShieldDamage = 1;
+
     [Header("Weapon")]
     public GameObject projectilePrefab;
     public float projectileSpeed = 22f;

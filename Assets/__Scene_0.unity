@@ -433,6 +433,9 @@ MonoBehaviour:
   seekerPrefab: {fileID: 1272244872553479225, guid: d4c3b2a109876543f0e1d2c3b4a59687, type: 3}
   seekerWaveInterval: 7
   seekerSpawnTopPadding: 4
+  rammerPrefab: {fileID: 1272244872553479225, guid: a1b2c3d4e5f60718293a4b5c6d7e8f09, type: 3}
+  rammerWaveInterval: 8
+  rammerSpawnTopPadding: 3.5
   sideRunnerPrefab: {fileID: 1272244872553479225, guid: b5c4d3e2f1098a7b6c5049382716abcd, type: 3}
   sideRunnerWaveInterval: 6
   sideRunnerSpeed: 16

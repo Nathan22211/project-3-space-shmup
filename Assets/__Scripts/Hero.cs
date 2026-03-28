@@ -99,7 +99,8 @@ public class Hero : MonoBehaviour
 
         Enemy enemy = rootGO.GetComponent<Enemy>();
         if (enemy != null) {
-            shieldLevel--;
+            int ram = Mathf.Max(1, enemy.heroRamShieldDamage);
+            shieldLevel = shieldLevel - ram;
             Destroy(rootGO);
         } else {
             Debug.Log("Hero hit by non-Enemy: " + rootGO.name);

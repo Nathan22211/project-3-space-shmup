@@ -28,6 +28,11 @@ public class Main : MonoBehaviour
     public float seekerWaveInterval = 7f;
     public float seekerSpawnTopPadding = 4f;
 
+    [Header("Rammer (homing, no shots, extra shield damage)")]
+    public GameObject rammerPrefab;
+    public float rammerWaveInterval = 8f;
+    public float rammerSpawnTopPadding = 3.5f;
+
     [Header("Side runner (#3 — straight across, faces travel)")]
     public GameObject sideRunnerPrefab;
     public float sideRunnerWaveInterval = 6f;
@@ -60,6 +65,7 @@ public class Main : MonoBehaviour
     {
         StartCoroutine(SideFormationWaves());
         StartCoroutine(SeekerWaves());
+        StartCoroutine(RammerWaves());
         StartCoroutine(SideRunnerWaves());
         StartCoroutine(HeavyDropWaves());
     }
@@ -196,13 +202,45 @@ public class Main : MonoBehaviour
         float cy = cam.transform.position.y;
         float ch = cam.orthographicSize;
         float y = cy + ch + seekerSpawnTopPadding;
-        float x = cx + Random.Range(-bndCheck.camWidth * 0.45f, bndCheck.camWidth * 0.45f);
+        float halfW = (bndCheck != null && bndCheck.camWidth > 1e-4f)
+            ? bndCheck.camWidth
+            : ch * cam.aspect;
+        float x = cx + Random.Range(-halfW * 0.45f, halfW * 0.45f);
         GameObject go = Instantiate(seekerPrefab);
         go.transform.position = new Vector3(x, y, 0f);
         Enemy e = go.GetComponent<Enemy>();
         if (e != null && enemyProjectilePrefab != null) {
             e.AssignProjectile(enemyProjectilePrefab, enemyProjectileSpeed);
         }
+    }
+
+    IEnumerator RammerWaves()
+    {
+        yield return new WaitForSeconds(5.5f);
+        while (true) {
+            if (rammerPrefab != null) {
+                SpawnRammer();
+            }
+            yield return new WaitForSeconds(rammerWaveInterval);
+        }
+    }
+
+    void SpawnRammer()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return;
+        }
+        float cx = cam.transform.position.x;
+        float cy = cam.transform.position.y;
+        float ch = cam.orthographicSize;
+        float halfW = (bndCheck != null && bndCheck.camWidth > 1e-4f)
+            ? bndCheck.camWidth
+            : ch * cam.aspect;
+        float y = cy + ch + rammerSpawnTopPadding;
+        float x = cx + Random.Range(-halfW * 0.42f, halfW * 0.42f);
+        GameObject go = Instantiate(rammerPrefab);
+        go.transform.position = new Vector3(x, y, 0f);
     }
 
     IEnumerator SideFormationWaves()
