@@ -28,10 +28,20 @@ public class Main : MonoBehaviour
     public float seekerWaveInterval = 7f;
     public float seekerSpawnTopPadding = 4f;
 
+    [Header("Side runner (#3 — straight across, faces travel)")]
+    public GameObject sideRunnerPrefab;
+    public float sideRunnerWaveInterval = 6f;
+    public float sideRunnerSpeed = 16f;
+    public float sideRunnerSpawnPadding = 3f;
+    [Tooltip("Vertical band in view: 0 = bottom, 1 = top.")]
+    [Range(0.05f, 0.95f)] public float sideRunnerSpawnYMinFrac = 0.25f;
+    [Range(0.05f, 0.95f)] public float sideRunnerSpawnYMaxFrac = 0.85f;
+
     public float enemyDefaultPadding = 1.5f;
     public float gameRestartDelay = 2f;
 
     private BoundsCheck bndCheck;
+    private bool _warnedSideRunnerPrefabMissing;
 
     void Awake()
     {
@@ -43,6 +53,89 @@ public class Main : MonoBehaviour
     {
         StartCoroutine(SideFormationWaves());
         StartCoroutine(SeekerWaves());
+        StartCoroutine(SideRunnerWaves());
+    }
+
+    IEnumerator SideRunnerWaves()
+    {
+        Debug.Log(
+            $"[SideRunner] Coroutine SideRunnerWaves started (prefab={(sideRunnerPrefab != null ? sideRunnerPrefab.name : "NULL — assign on Main")}).");
+        yield return new WaitForSeconds(1.25f);
+        while (true) {
+            if (sideRunnerPrefab != null) {
+                SpawnSideRunner();
+            } else if (!_warnedSideRunnerPrefabMissing) {
+                _warnedSideRunnerPrefabMissing = true;
+                Debug.LogWarning(
+                    "[SideRunner] sideRunnerPrefab is not assigned on Main — no runners will spawn. Drag EnemySideRunner prefab into the field.");
+            }
+            yield return new WaitForSeconds(sideRunnerWaveInterval);
+        }
+    }
+
+    void SpawnSideRunner()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            Debug.LogWarning("[SideRunner] SpawnSideRunner aborted — Camera.main is null (need a camera tagged MainCamera).");
+            return;
+        }
+        bool fromLeft = Random.value < 0.5f;
+        float y = RandomSideRunnerY();
+        float x = FormationBaseXForPrefab(fromLeft, sideRunnerSpawnPadding, sideRunnerPrefab);
+        GameObject go = Instantiate(sideRunnerPrefab);
+        go.transform.position = new Vector3(x, y, 0f);
+        EnemySideRunner runner = go.GetComponent<EnemySideRunner>();
+        if (runner != null) {
+            if (fromLeft) {
+                runner.SetStraightRunFromLeft(sideRunnerSpeed);
+            } else {
+                runner.SetStraightRunFromRight(sideRunnerSpeed);
+            }
+        }
+        Enemy e = go.GetComponent<Enemy>();
+        if (e != null && enemyProjectilePrefab != null) {
+            e.AssignProjectile(enemyProjectilePrefab, enemyProjectileSpeed);
+        }
+        Debug.Log(
+            $"[SideRunner] Spawn fromLeft={fromLeft} pos=({x:F2}, {y:F2}) " +
+            $"hasRunnerScript={runner != null} instanceID={go.GetInstanceID()}");
+    }
+
+    float RandomSideRunnerY()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return 0f;
+        }
+        float ch = cam.orthographicSize;
+        float cy = cam.transform.position.y;
+        float t0 = Mathf.Min(sideRunnerSpawnYMinFrac, sideRunnerSpawnYMaxFrac);
+        float t1 = Mathf.Max(sideRunnerSpawnYMinFrac, sideRunnerSpawnYMaxFrac);
+        float yBottom = cy - ch;
+        return Random.Range(yBottom + t0 * 2f * ch, yBottom + t1 * 2f * ch);
+    }
+
+    float FormationBaseXForPrefab(bool fromLeft, float padding, GameObject prefabForInset)
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return 0f;
+        }
+        float cx = cam.transform.position.x;
+        float inset = enemyDefaultPadding;
+        if (prefabForInset != null) {
+            BoundsCheck eb = prefabForInset.GetComponent<BoundsCheck>();
+            if (eb != null) {
+                inset = Mathf.Max(inset, Mathf.Abs(eb.radius));
+            }
+        }
+        float halfW = (bndCheck != null && bndCheck.camWidth > 1e-4f)
+            ? bndCheck.camWidth
+            : cam.orthographicSize * cam.aspect;
+        return fromLeft
+            ? (cx - halfW - inset - padding)
+            : (cx + halfW + inset + padding);
     }
 
     IEnumerator SeekerWaves()
@@ -113,21 +206,10 @@ public class Main : MonoBehaviour
 
     float FormationBaseX(bool fromLeft)
     {
-        Camera cam = Camera.main;
-        if (cam == null) {
-            return 0f;
-        }
-        float cx = cam.transform.position.x;
-        float inset = enemyDefaultPadding;
-        if (prefabEnemies != null && prefabEnemies.Length > 0) {
-            BoundsCheck eb = prefabEnemies[0].GetComponent<BoundsCheck>();
-            if (eb != null) {
-                inset = Mathf.Max(inset, Mathf.Abs(eb.radius));
-            }
-        }
-        return fromLeft
-            ? (cx - bndCheck.camWidth - inset - sideFormationSpawnPadding)
-            : (cx + bndCheck.camWidth + inset + sideFormationSpawnPadding);
+        GameObject insetSrc = (prefabEnemies != null && prefabEnemies.Length > 0)
+            ? prefabEnemies[0]
+            : null;
+        return FormationBaseXForPrefab(fromLeft, sideFormationSpawnPadding, insetSrc);
     }
 
     void SpawnFormationShip(bool fromLeft, float worldY, float worldX)

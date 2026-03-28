@@ -28,7 +28,7 @@ public class Enemy : MonoBehaviour
     private Vector3 formationVelocity;
     private bool formationMove;
     protected float nextFireTime;
-    private bool wasOnScreen;
+    protected bool wasOnScreen;
 
     protected virtual void Awake()
     {
@@ -156,6 +156,10 @@ public class Enemy : MonoBehaviour
         if (mutualDestroyOverlapRadius <= 0f || s_enemyLayerMask == 0) {
             return;
         }
+        // Avoid destroying fresh side spawns that overlap in world space but have not entered the view yet.
+        if (!wasOnScreen) {
+            return;
+        }
         int n = Physics.OverlapSphereNonAlloc(
             transform.position,
             mutualDestroyOverlapRadius,
@@ -166,6 +170,9 @@ public class Enemy : MonoBehaviour
             Collider c = OverlapScratch[i];
             Enemy o = c.GetComponentInParent<Enemy>();
             if (o == null || o == this) {
+                continue;
+            }
+            if (!o.wasOnScreen) {
                 continue;
             }
             if (GetInstanceID() < o.GetInstanceID()) {
