@@ -422,7 +422,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prefabEnemies:
   - {fileID: 1272244872553479225, guid: e942312bd9c7df08897187308b0972ac, type: 3}
-  enemySpawnPerSecond: 0.5
+  enemyProjectilePrefab: {fileID: 8209989751977522669, guid: ab2734084dc863d758faf645d7c90a13, type: 3}
+  enemyProjectileSpeed: 24
+  sideFormationWaveInterval: 5
+  sideFormationAlongEdgeSpacing: 5
+  sideFormationLateralSpeed: 12
+  sideFormationSpawnPadding: 3
+  formationSpawnYMinFrac: 0.62
+  formationSpawnYMaxFrac: 0.92
   enemyDefaultPadding: 1.5
   gameRestartDelay: 2
 --- !u!1001 &1539514444

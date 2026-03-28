@@ -53,9 +53,15 @@ public class Hero : MonoBehaviour
     }
 
     void OnTriggerEnter(Collider other) {
+        ProjectileEnemy bullet = other.GetComponentInParent<ProjectileEnemy>();
+        if (bullet != null) {
+            shieldLevel--;
+            Destroy(bullet.gameObject);
+            return;
+        }
+
         Transform rootT = other.gameObject.transform.root;
         GameObject rootGO = rootT.gameObject;
-        Debug.Log("Hero hit: " + rootGO.name);
 
         if (rootGO == lastTriggerObj) {
             return;

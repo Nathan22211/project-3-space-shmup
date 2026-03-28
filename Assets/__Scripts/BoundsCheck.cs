@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BoundsCheck : MonoBehaviour
@@ -23,14 +21,34 @@ public class BoundsCheck : MonoBehaviour
         offScreenBottom = 4,
         offScreenTop = 8
     }
+
+    Camera _cam;
+
     void Awake()
     {
-        camHeight = Camera.main.orthographicSize;
-        camWidth = camHeight * Camera.main.aspect;
+        _cam = Camera.main;
+        RefreshCamExtents();
+    }
+
+    void RefreshCamExtents()
+    {
+        if (_cam == null) {
+            return;
+        }
+        camHeight = _cam.orthographicSize;
+        camWidth = camHeight * _cam.aspect;
     }
 
     void LateUpdate()
     {
+        if (_cam == null) {
+            _cam = Camera.main;
+            RefreshCamExtents();
+            if (_cam == null) {
+                return;
+            }
+        }
+
         float checkRadius = 0;
         if (boundsType == eType.inset || boundsType == eType.center) {
             checkRadius = -radius;
@@ -39,22 +57,26 @@ public class BoundsCheck : MonoBehaviour
             checkRadius = radius;
         }
 
+        Vector3 c = _cam.transform.position;
+        float cx = c.x;
+        float cy = c.y;
+
         Vector3 pos = transform.position;
         screenLocs = eScreenLocs.onScreen;
-        if (pos.x > camWidth + checkRadius) {
-            pos.x = -camWidth - checkRadius;
+        if (pos.x > cx + camWidth + checkRadius) {
+            pos.x = cx - camWidth - checkRadius;
             screenLocs = eScreenLocs.offScreenLeft;
         }
-        if (pos.x < -camWidth - checkRadius) {
-            pos.x = camWidth + checkRadius;
+        if (pos.x < cx - camWidth - checkRadius) {
+            pos.x = cx + camWidth + checkRadius;
             screenLocs = eScreenLocs.offScreenRight;
         }
-        if (pos.y > camHeight + checkRadius) {
-            pos.y = -camHeight - checkRadius;
+        if (pos.y > cy + camHeight + checkRadius) {
+            pos.y = cy - camHeight - checkRadius;
             screenLocs = eScreenLocs.offScreenBottom;
         }
-        if (pos.y < -camHeight - checkRadius) {
-            pos.y = camHeight + checkRadius;
+        if (pos.y < cy - camHeight - checkRadius) {
+            pos.y = cy + camHeight + checkRadius;
             screenLocs = eScreenLocs.offScreenTop;
         }
 

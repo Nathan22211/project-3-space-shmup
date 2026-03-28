@@ -9,7 +9,20 @@ public class Main : MonoBehaviour
 
     [Header("Inscribed")]
     public GameObject[] prefabEnemies;
-    public float enemySpawnPerSecond = 0.5f;
+    public GameObject enemyProjectilePrefab;
+    public float enemyProjectileSpeed = 24f;
+
+    [Header("Side formation (3 ships)")]
+    public float sideFormationWaveInterval = 5f;
+    [Tooltip("Distance along X between ships (abreast, parallel to the screen top/bottom).")]
+    public float sideFormationAlongEdgeSpacing = 5f;
+    public float sideFormationLateralSpeed = 12f;
+    public float sideFormationSpawnPadding = 3f;
+    [Tooltip("Vertical position in view: 0 = bottom edge, 1 = top edge (uses main camera).")]
+    [Range(0.05f, 0.95f)] public float formationSpawnYMinFrac = 0.62f;
+    [Tooltip("Vertical position in view: 0 = bottom edge, 1 = top edge.")]
+    [Range(0.05f, 0.95f)] public float formationSpawnYMaxFrac = 0.92f;
+
     public float enemyDefaultPadding = 1.5f;
     public float gameRestartDelay = 2f;
 
@@ -19,26 +32,85 @@ public class Main : MonoBehaviour
     {
         S = this;
         bndCheck = GetComponent<BoundsCheck>();
-
-        Invoke( nameof(SpawnEnemy), 1f/enemySpawnPerSecond);
     }
 
-    public void SpawnEnemy() {
+    void Start()
+    {
+        StartCoroutine(SideFormationWaves());
+    }
 
-        int ndx = Random.Range(0, prefabEnemies.Length);
-        GameObject go = Instantiate<GameObject>(prefabEnemies[ndx]);
-
-        float enemyInset = enemyDefaultPadding;
-        if (go.GetComponent<BoundsCheck>() != null) {
-            enemyInset = Mathf.Abs(go.GetComponent<BoundsCheck>().radius);
+    IEnumerator SideFormationWaves()
+    {
+        yield return new WaitForSeconds(0.75f);
+        while (true) {
+            if (prefabEnemies != null && prefabEnemies.Length > 0) {
+                SpawnSideFormationTrio();
+            }
+            yield return new WaitForSeconds(sideFormationWaveInterval);
         }
+    }
 
-        Vector3 pos = Vector3.zero;
-        pos.x = Random.Range(-bndCheck.camWidth + enemyInset, bndCheck.camWidth - enemyInset);
-        pos.y = bndCheck.camHeight + enemyInset;
-        go.transform.position = pos;
+    void SpawnSideFormationTrio()
+    {
+        bool fromLeft = Random.value < 0.5f;
+        float yMid = RandomFormationY();
+        float baseX = FormationBaseX(fromLeft);
+        for (int i = -1; i <= 1; i++) {
+            float x = baseX + i * sideFormationAlongEdgeSpacing;
+            SpawnFormationShip(fromLeft, yMid, x);
+        }
+    }
 
-        Invoke( nameof(SpawnEnemy), 1f/enemySpawnPerSecond);
+    float RandomFormationY()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return 0f;
+        }
+        float ch = cam.orthographicSize;
+        float cy = cam.transform.position.y;
+        float t0 = Mathf.Min(formationSpawnYMinFrac, formationSpawnYMaxFrac);
+        float t1 = Mathf.Max(formationSpawnYMinFrac, formationSpawnYMaxFrac);
+        float yBottom = cy - ch;
+        return Random.Range(yBottom + t0 * 2f * ch, yBottom + t1 * 2f * ch);
+    }
+
+    float FormationBaseX(bool fromLeft)
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return 0f;
+        }
+        float cx = cam.transform.position.x;
+        float inset = enemyDefaultPadding;
+        if (prefabEnemies != null && prefabEnemies.Length > 0) {
+            BoundsCheck eb = prefabEnemies[0].GetComponent<BoundsCheck>();
+            if (eb != null) {
+                inset = Mathf.Max(inset, Mathf.Abs(eb.radius));
+            }
+        }
+        return fromLeft
+            ? (cx - bndCheck.camWidth - inset - sideFormationSpawnPadding)
+            : (cx + bndCheck.camWidth + inset + sideFormationSpawnPadding);
+    }
+
+    void SpawnFormationShip(bool fromLeft, float worldY, float worldX)
+    {
+        int ndx = Random.Range(0, prefabEnemies.Length);
+        GameObject go = Instantiate(prefabEnemies[ndx]);
+        go.transform.position = new Vector3(worldX, worldY, 0f);
+
+        Enemy enemy = go.GetComponent<Enemy>();
+        if (enemy != null) {
+            if (fromLeft) {
+                enemy.SetSideEntryFromLeft(sideFormationLateralSpeed);
+            } else {
+                enemy.SetSideEntryFromRight(sideFormationLateralSpeed);
+            }
+            if (enemyProjectilePrefab != null) {
+                enemy.AssignProjectile(enemyProjectilePrefab, enemyProjectileSpeed);
+            }
+        }
     }
 
     void DelayedRestart() {
