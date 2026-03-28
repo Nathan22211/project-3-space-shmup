@@ -13,10 +13,19 @@ public class Hero : MonoBehaviour
     public GameObject projectilePrefab;
     public float projectileSpeed = 40;
 
+    [Header("Shield")]
+    public int maxShieldLevel = 4;
+    [Tooltip("Seconds until the first shield layer returns after taking damage.")]
+    public float shieldRegenBaseDelay = 2.75f;
+    [Tooltip("Each restored layer multiplies the next wait by this (>1). Keep close to 1 for a mild curve (e.g. 1.06–1.12).")]
+    public float shieldRegenDelayExponent = 1.09f;
+
     [Header("Dynamic")]
     private float _shieldLevel = 1;
     [Tooltip("This field holds a reference to the last triggering object")]
     private GameObject lastTriggerObj = null;
+    float _shieldRegenTimer;
+    int _shieldRegenStep;
 
     void Awake()
     {
@@ -43,6 +52,26 @@ public class Hero : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space)) {
             TempFire();
         }
+
+        TickShieldRegen();
+    }
+
+    void TickShieldRegen()
+    {
+        if (_shieldLevel >= maxShieldLevel) {
+            return;
+        }
+        if (shieldRegenBaseDelay <= 0f || shieldRegenDelayExponent < 1.0001f) {
+            return;
+        }
+        _shieldRegenTimer += Time.deltaTime;
+        float need = shieldRegenBaseDelay * Mathf.Pow(shieldRegenDelayExponent, _shieldRegenStep);
+        if (_shieldRegenTimer < need) {
+            return;
+        }
+        _shieldRegenTimer = 0f;
+        _shieldRegenStep++;
+        shieldLevel = Mathf.Min(_shieldLevel + 1f, maxShieldLevel);
     }
 
     void TempFire() {
@@ -82,7 +111,12 @@ public class Hero : MonoBehaviour
             return _shieldLevel;
         }
         private set {
-            _shieldLevel = Mathf.Min(value, 4);
+            float prev = _shieldLevel;
+            _shieldLevel = Mathf.Min(value, maxShieldLevel);
+            if (_shieldLevel < prev) {
+                _shieldRegenTimer = 0f;
+                _shieldRegenStep = 0;
+            }
             if (value < 0) {
                 Destroy(this.gameObject);
             }
