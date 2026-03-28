@@ -23,6 +23,11 @@ public class Main : MonoBehaviour
     [Tooltip("Vertical position in view: 0 = bottom edge, 1 = top edge.")]
     [Range(0.05f, 0.95f)] public float formationSpawnYMaxFrac = 0.92f;
 
+    [Header("Seeker (single homing ship)")]
+    public GameObject seekerPrefab;
+    public float seekerWaveInterval = 7f;
+    public float seekerSpawnTopPadding = 4f;
+
     public float enemyDefaultPadding = 1.5f;
     public float gameRestartDelay = 2f;
 
@@ -37,6 +42,37 @@ public class Main : MonoBehaviour
     void Start()
     {
         StartCoroutine(SideFormationWaves());
+        StartCoroutine(SeekerWaves());
+    }
+
+    IEnumerator SeekerWaves()
+    {
+        yield return new WaitForSeconds(2.5f);
+        while (true) {
+            if (seekerPrefab != null) {
+                SpawnSeeker();
+            }
+            yield return new WaitForSeconds(seekerWaveInterval);
+        }
+    }
+
+    void SpawnSeeker()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) {
+            return;
+        }
+        float cx = cam.transform.position.x;
+        float cy = cam.transform.position.y;
+        float ch = cam.orthographicSize;
+        float y = cy + ch + seekerSpawnTopPadding;
+        float x = cx + Random.Range(-bndCheck.camWidth * 0.45f, bndCheck.camWidth * 0.45f);
+        GameObject go = Instantiate(seekerPrefab);
+        go.transform.position = new Vector3(x, y, 0f);
+        Enemy e = go.GetComponent<Enemy>();
+        if (e != null && enemyProjectilePrefab != null) {
+            e.AssignProjectile(enemyProjectilePrefab, enemyProjectileSpeed);
+        }
     }
 
     IEnumerator SideFormationWaves()

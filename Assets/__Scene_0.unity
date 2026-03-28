@@ -430,6 +430,9 @@ MonoBehaviour:
   sideFormationSpawnPadding: 3
   formationSpawnYMinFrac: 0.62
   formationSpawnYMaxFrac: 0.92
+  seekerPrefab: {fileID: 1272244872553479225, guid: d4c3b2a109876543f0e1d2c3b4a59687, type: 3}
+  seekerWaveInterval: 7
+  seekerSpawnTopPadding: 4
   enemyDefaultPadding: 1.5
   gameRestartDelay: 2
 --- !u!1001 &1539514444
